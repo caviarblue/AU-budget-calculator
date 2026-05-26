@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f0f;
+  --surface: #161616;
+  --surface2: #1e1e1e;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #f0ede8;
+  --muted: #7a7672;
+  --accent: #d4f57a;
+  --accent-dim: rgba(212,245,122,0.12);
+  --danger: #f56a6a;
+  --danger-dim: rgba(245,106,106,0.12);
+  --warn: #f5c56a;
+  --warn-dim: rgba(245,197,106,0.12);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --font-display: 'Instrument Serif', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 180px;
+}
+
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 40px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.logo em { font-style: italic; color: var(--accent); }
+
+.logo-sub {
+  font-size: 12px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  min-height: calc(100vh - 61px);
+}
+
+.sidebar {
+  border-right: 1px solid var(--border);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.main {
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+}
+
+.income-display {
+  font-family: var(--font-display);
+  font-size: 48px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.income-display span {
+  font-size: 22px;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-weight: 300;
+}
+
+.income-annual {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  background: var(--border2);
+  border-radius: 1px;
+  outline: none;
+  cursor: pointer;
+  margin: 10px 0;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  transition: transform .15s;
+}
+
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+input[type=range].cat-sl::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.preset-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s, background .15s;
+  color: var(--text);
+}
+
+.preset-btn:hover {
+  border-color: var(--border2);
+  background: var(--surface2);
+}
+
+.preset-btn.active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.preset-btn .p-name {
+  font-size: 12px;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.preset-btn .p-val {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.preset-btn.active .p-val { color: var(--accent); }
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  border: 1px solid;
+  width: 100%;
+  justify-content: center;
+}
+
+.status-ok { background: var(--accent-dim); color: var(--accent); border-color: rgba(212,245,122,0.25); }
+.status-warn { background: var(--warn-dim); color: var(--warn); border-color: rgba(245,197,106,0.25); }
+.status-over { background: var(--danger-dim); color: var(--danger); border-color: rgba(245,106,106,0.25); }
+
+.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+.snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+}
+
+.metric-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+
+.metric-val {
+  font-family: var(--font-display);
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1;
+}
+
+.metric-sub { font-size: 10px; color: var(--muted); font-family: var(--font-mono); margin-top: 4px; }
+
+.metric.accent-card {
+  background: var(--accent-dim);
+  border-color: rgba(212,245,122,0.2);
+}
+
+.metric.accent-card .metric-val { color: var(--accent); }
+.metric.accent-card .metric-label { color: rgba(212,245,122,0.6); }
+.metric.accent-card .metric-sub { color: rgba(212,245,122,0.5); }
+
+.bar-wrap {
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  background: var(--surface2);
+}
+
+.bar-seg { height: 100%; transition: width .3s cubic-bezier(.4,0,.2,1); }
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.group-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.group-header {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.group-title {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+
+.group-total {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.cat-row {
+  display: grid;
+  grid-template-columns: 22px 1fr 90px 52px 88px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+
+.cat-row:last-child { border-bottom: none; }
+.cat-row:hover { background: var(--surface2); }
+
+.cat-icon { font-size: 15px; }
+
+.cat-name {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 400;
+}
+
+.cat-pct {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.cat-amt {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+}
+
+.legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.reset-btn {
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: color .15s, border-color .15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+}
+
+.reset-btn:hover { color: var(--text); border-color: var(--border2); }
+
+.tip-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+}
+
+.tip-title {
+  font-size: 12px;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tip-item {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 4px 0;
+  display: flex;
+  gap: 8px;
+  line-height: 1.5;
+}
+
+.tip-item::before { content: '→'; color: var(--accent); flex-shrink: 0; }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+  header { padding: 16px 20px; }
+  .main { padding: 20px; }
+  .sidebar { padding: 20px; }
+  .income-display { font-size: 36px; }
+  .snapshot-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .cat-row { grid-template-columns: 22px 1fr 44px 70px; }
+  .cat-amt { display: none; }
+  .snapshot-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.fade-in {
+  animation: fadeIn .4s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<header>
+  <div class="logo"><em>budget</em>planner</div>
+  <div class="logo-sub">/ personal finance tool</div>
+</header>
+
+<div class="app">
+  <aside class="sidebar fade-in">
+    <div>
+      <div class="section-label">Monthly income</div>
+      <div class="income-display" id="income-disp">$<span id="income-int">3,500</span></div>
+      <div class="income-annual" id="income-annual">$42,000 per year</div>
+      <input type="range" id="income-sl" min="1000" max="15000" step="50" value="3500">
+    </div>
+
+    <div>
+      <div class="section-label">Income presets</div>
+      <div class="preset-grid" id="preset-grid">
+        <button class="preset-btn" onclick="setIncome(1256,this)">
+          <span class="p-name">Minimum wage</span>
+          <span class="p-val">~$1,256/mo</span>
+        </button>
+        <button class="preset-btn" onclick="setIncome(2500,this)">
+          <span class="p-name">Below average</span>
+          <span class="p-val">~$2,500/mo</span>
+        </button>
+        <button class="preset-btn active" onclick="setIncome(3500,this)">
+          <span class="p-name">Average</span>
+          <span class="p-val">~$3,500/mo</span>
+        </button>
+        <button class="preset-btn" onclick="setIncome(6000,this)">
+          <span class="p-name">Above average</span>
+          <span class="p-val">~$6,000/mo</span>
+        </button>
+        <button class="preset-btn" onclick="setIncome(10000,this)">
+          <span class="p-name">High earner</span>
+          <span class="p-val">~$10,000/mo</span>
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div id="status-pill" class="status-pill status-ok">
+        <span class="dot"></span>
+        <span id="status-text">12% unallocated</span>
+      </div>
+    </div>
+
+    <div id="tip-block" class="tip-block">
+      <div class="tip-title">&#x2605; Tips for your level</div>
+      <div id="tips-content"></div>
+    </div>
+
+    <button class="reset-btn" onclick="resetDefaults()">
+      ↺ Reset to recommended
+    </button>
+  </aside>
+
+  <main class="main fade-in">
+    <div>
+      <div class="section-label">Allocation overview</div>
+      <div class="bar-wrap" id="stacked-bar" style="margin-bottom:10px"></div>
+      <div class="legend-row" id="legend-row"></div>
+    </div>
+
+    <div>
+      <div class="snapshot-grid" id="snapshot-grid"></div>
+    </div>
+
+    <div>
+      <div class="section-label">Adjust categories</div>
+      <div class="groups" id="groups"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+const CATS = [
+  {key:'rent',    label:'Housing / rent',     icon:'🏠', color:'#378ADD', def:30, group:'Needs'},
+  {key:'food',    label:'Food & groceries',   icon:'🥗', color:'#1D9E75', def:12, group:'Needs'},
+  {key:'trans',   label:'Transport',          icon:'🚗', color:'#BA7517', def:10, group:'Needs'},
+  {key:'util',    label:'Utilities & bills',  icon:'⚡', color:'#D4537E', def:7,  group:'Needs'},
+  {key:'health',  label:'Health & insurance', icon:'❤️', color:'#7F77DD', def:7,  group:'Needs'},
+  {key:'ent',     label:'Entertainment',      icon:'🎬', color:'#D85A30', def:5,  group:'Wants'},
+  {key:'personal',label:'Personal & misc',    icon:'👕', color:'#888780', def:5,  group:'Wants'},
+  {key:'savings', label:'Savings',            icon:'🐷', color:'#8BBF3A', def:10, group:'Savings & investing'},
+  {key:'invest',  label:'Investing',          icon:'📈', color:'#185FA5', def:7,  group:'Savings & investing'},
+  {key:'emerg',   label:'Emergency fund',     icon:'🛡️', color:'#993556', def:7,  group:'Savings & investing'},
+];
+
+let pcts = {};
+let income = 3500;
+CATS.forEach(c => pcts[c.key] = c.def);
+
+const fmt = n => '$' + Math.round(n).toLocaleString();
+const totalPct = () => CATS.reduce((a,c) => a + pcts[c.key], 0);
+
+function getTips(inc) {
+  if(inc <= 1500) return [
+    'Prioritize housing, food, and a small emergency buffer before anything else.',
+    'Look into housing assistance, food banks, and utility relief programs in your area.',
+    'Even $20–$50/mo saved builds a powerful habit — automate it on payday.',
+    'Cooking at home and public transport are your two biggest cost levers.'
+  ];
+  if(inc <= 3500) return [
+    'Keep housing under 30%. If it\'s higher, a roommate or side income can help.',
+    'Build 1 month of expenses as an emergency fund before starting to invest.',
+    'A Roth IRA (if eligible) is a great first investment account — $500/yr to start.',
+    'Track every expense for 30 days — awareness alone will reduce spending.'
+  ];
+  if(inc <= 7000) return [
+    'Follow 50/30/20: 50% needs, 30% wants, 20% savings & investments.',
+    'Max out your employer 401k match first — it\'s a guaranteed 50–100% return.',
+    'After a 3–6 month emergency fund, shift extra to index fund investing.',
+    'Automate savings transfers on payday so you never see the money in checking.'
+  ];
+  return [
+    'At this level, lifestyle creep is the biggest risk — lock in your savings % first.',
+    'Max your 401k ($23,500/yr) and HSA ($4,150 single) for tax advantages.',
+    'After maxing tax-advantaged accounts, open a taxable brokerage for more.',
+    'A fee-only financial advisor for a one-time plan can pay for itself many times over.'
+  ];
+}
+
+function render() {
+  const tot = totalPct();
+  const rem = 100 - tot;
+
+  document.getElementById('income-int').textContent = Math.round(income).toLocaleString();
+  document.getElementById('income-annual').textContent = fmt(income * 12) + ' per year · ' + fmt(income / 4.33) + ' per week';
+  document.getElementById('income-sl').value = income;
+
+  const bar = document.getElementById('stacked-bar');
+  bar.innerHTML = CATS.map(c =>
+    `<div class="bar-seg" style="width:${pcts[c.key]}%;background:${c.color}" title="${c.label}: ${pcts[c.key]}%"></div>`
+  ).join('');
+
+  const legend = document.getElementById('legend-row');
+  legend.innerHTML = CATS.map(c =>
+    `<span class="legend-item"><span class="legend-dot" style="background:${c.color}"></span>${c.label} ${pcts[c.key]}%</span>`
+  ).join('');
+
+  const pill = document.getElementById('status-pill');
+  const stxt = document.getElementById('status-text');
+  if (rem > 0) {
+    pill.className = 'status-pill status-ok';
+    stxt.textContent = rem + '% unallocated — ' + fmt(income * rem / 100) + '/mo free';
+  } else if (rem === 0) {
+    pill.className = 'status-pill status-ok';
+    stxt.textContent = '100% allocated — perfectly balanced';
+  } else {
+    pill.className = 'status-pill status-over';
+    stxt.textContent = 'Over budget by ' + Math.abs(rem) + '% — reduce some categories';
+  }
+
+  const needs = ['rent','food','trans','util','health'].reduce((a,k) => a + pcts[k], 0);
+  const wants = ['ent','personal'].reduce((a,k) => a + pcts[k], 0);
+  const saves = ['savings','invest','emerg'].reduce((a,k) => a + pcts[k], 0);
+  const unalloc = Math.max(0, rem);
+  document.getElementById('snapshot-grid').innerHTML = `
+    <div class="metric"><div class="metric-label">Needs</div><div class="metric-val">${fmt(income*needs/100)}</div><div class="metric-sub">${needs}% of income</div></div>
+    <div class="metric"><div class="metric-label">Wants</div><div class="metric-val">${fmt(income*wants/100)}</div><div class="metric-sub">${wants}% of income</div></div>
+    <div class="metric accent-card"><div class="metric-label">Saved &amp; invested</div><div class="metric-val">${fmt(income*saves/100)}</div><div class="metric-sub">${saves}% of income</div></div>
+    <div class="metric"><div class="metric-label">Total allocated</div><div class="metric-val" style="color:${rem<0?'var(--danger)':'var(--text)'}">${tot}%</div><div class="metric-sub">${fmt(income*tot/100)}/mo</div></div>
+    <div class="metric"><div class="metric-label">Unallocated buffer</div><div class="metric-val">${fmt(income*unalloc/100)}</div><div class="metric-sub">${unalloc}% free</div></div>
+    <div class="metric"><div class="metric-label">Annual savings</div><div class="metric-val">${fmt(income*saves/100*12)}</div><div class="metric-sub">projected/year</div></div>
+  `;
+
+  const tips = getTips(income);
+  document.getElementById('tips-content').innerHTML = tips.map(t =>
+    `<div class="tip-item">${t}</div>`
+  ).join('');
+
+  CATS.forEach(c => {
+    const sl = document.getElementById('sl-' + c.key);
+    const pe = document.getElementById('pct-' + c.key);
+    const ae = document.getElementById('amt-' + c.key);
+    if (sl) sl.value = pcts[c.key];
+    if (pe) pe.textContent = pcts[c.key] + '%';
+    if (ae) ae.textContent = fmt(income * pcts[c.key] / 100);
+    if (pe) pe.style.color = CATS.find(x=>x.key===c.key).color;
+  });
+
+  const groups = ['Needs', 'Wants', 'Savings & investing'];
+  groups.forEach(g => {
+    const cats = CATS.filter(c => c.group === g);
+    const gtot = cats.reduce((a,c) => a + pcts[c.key], 0);
+    const el = document.getElementById('gtot-' + g.replace(/[^a-z]/gi,''));
+    if (el) el.textContent = gtot + '% · ' + fmt(income * gtot / 100);
+  });
+}
+
+function buildGroups() {
+  const groups = ['Needs', 'Wants', 'Savings & investing'];
+  let html = '';
+  groups.forEach(g => {
+    const cats = CATS.filter(c => c.group === g);
+    const gid = g.replace(/[^a-z]/gi,'');
+    html += `<div class="group-block">
+      <div class="group-header">
+        <span class="group-title">${g}</span>
+        <span class="group-total" id="gtot-${gid}"></span>
+      </div>`;
+    cats.forEach(c => {
+      html += `<div class="cat-row">
+        <span class="cat-icon">${c.icon}</span>
+        <span class="cat-name">${c.label}</span>
+        <input type="range" class="cat-sl" id="sl-${c.key}" min="0" max="60" step="1" value="${pcts[c.key]}"
+          oninput="onSlide('${c.key}', this.value)"
+          style="--thumb:${c.color}">
+        <span class="cat-pct" id="pct-${c.key}">${pcts[c.key]}%</span>
+        <span class="cat-amt" id="amt-${c.key}"></span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  document.getElementById('groups').innerHTML = html;
+
+  document.querySelectorAll('.cat-sl').forEach(sl => {
+    const key = sl.id.replace('sl-','');
+    const cat = CATS.find(c => c.key === key);
+    sl.style.setProperty('--thumb-color', cat.color);
+    sl.addEventListener('input', e => onSlide(key, e.target.value));
+  });
+}
+
+const thumbStyle = document.createElement('style');
+thumbStyle.textContent = CATS.map(c =>
+  `#sl-${c.key}::-webkit-slider-thumb { background: ${c.color}; }`
+).join('\n');
+document.head.appendChild(thumbStyle);
+
+function onSlide(key, val) {
+  pcts[key] = parseInt(val);
+  render();
+}
+
+function setIncome(val, btn) {
+  income = val;
+  document.getElementById('income-sl').value = val;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  render();
+}
+
+function resetDefaults() {
+  CATS.forEach(c => pcts[c.key] = c.def);
+  income = 3500;
+  document.getElementById('income-sl').value = 3500;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.preset-btn')[2].classList.add('active');
+  render();
+}
+
+document.getElementById('income-sl').addEventListener('input', e => {
+  income = parseInt(e.target.value);
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  render();
+});
+
+buildGroups();
+render();
+</script>
+</body>
+</html>
