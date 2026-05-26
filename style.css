@@ -100,33 +100,34 @@ header {
 
 /* ── Income input ── */
 .income-input-wrap {
-  position: relative;
-  margin-bottom: 8px;
-}
-.income-prefix {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-family: var(--font-display);
-  font-size: 32px;
-  color: var(--muted);
-  pointer-events: none;
-  line-height: 1;
-}
-.income-input {
-  width: 100%;
+  display: flex;
+  align-items: center;
   background: var(--surface);
   border: 1px solid var(--border2);
   border-radius: var(--radius-lg);
+  padding-left: 16px;
+  overflow: hidden;
+}
+
+.income-prefix {
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--muted);
+  line-height: 1;
+  margin-right: 8px;
+}
+
+.income-input {
+  width: 100%;
+  background: transparent;
+  border: none;
   color: var(--text);
   font-family: var(--font-display);
   font-size: 32px;
-  padding: 14px 14px 14px 36px;
+  padding: 14px 14px 14px 0;
   outline: none;
-  transition: border-color .15s;
   letter-spacing: -0.02em;
-  -moz-appearance: textfield;
 }
 .income-input::-webkit-inner-spin-button,
 .income-input::-webkit-outer-spin-button { -webkit-appearance: none; }
@@ -312,4 +313,49 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
   .cat-row { grid-template-columns: 22px 1fr 44px 70px; }
   .cat-amt { display: none; }
   .snapshot-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.currency-select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 9px 12px;
+  font-family: var(--font-body);
+}
+
+.currency-note {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.cat-money-wrap {
+  position: relative;
+  width: 110px;
+}
+
+.cat-money-prefix {
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.cat-money-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 4px 6px 4px 28px;
+  text-align: right;
+  outline: none;
 }

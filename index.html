@@ -1,391 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Budget Planner</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Budget Planner</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div class="grain"></div>
+  <div class="grain" aria-hidden="true"></div>
 
-<header>
-  <div class="logo"><em>budget</em>planner</div>
-  <div class="logo-sub">/ personal finance tool</div>
-</header>
+  <header class="site-header">
+    <div class="logo"><em>budget</em>planner</div>
+    <div class="logo-sub">/ personal finance tool</div>
+  </header>
 
-<div class="app">
-  <aside class="sidebar fade-in">
+  <div class="app">
+    <aside class="sidebar fade-in">
+      <section>
+        <div class="section-label">Currency</div>
+        <select id="currencySelect" class="currency-select" aria-label="Currency selector"></select>
+        <div class="currency-note" id="currencyNote"></div>
+      </section>
 
-    <!-- Period selector -->
-    <div>
-      <div class="section-label">Income period</div>
-      <div class="period-tabs" id="period-tabs">
-        <button class="period-tab" data-period="hourly"  onclick="setPeriod('hourly',this)">Hourly</button>
-        <button class="period-tab" data-period="daily"   onclick="setPeriod('daily',this)">Daily</button>
-        <button class="period-tab" data-period="weekly"  onclick="setPeriod('weekly',this)">Weekly</button>
-        <button class="period-tab active" data-period="monthly" onclick="setPeriod('monthly',this)">Monthly</button>
-      </div>
-    </div>
+      <section>
+        <div class="section-label">Income period</div>
+        <div class="period-tabs" id="periodTabs" role="tablist" aria-label="Income period selector"></div>
+      </section>
 
-    <!-- Custom income input -->
-    <div>
-      <div class="section-label" id="input-label">Enter monthly income</div>
-      <div class="income-input-wrap">
-        <span class="income-prefix">$</span>
-        <input type="number" class="income-input" id="income-input"
-          placeholder="3,500" value="3500" min="0" step="1"
-          oninput="onIncomeInput(this.value)">
-      </div>
-      <!-- OR slider -->
-      <input type="range" id="income-sl" min="0" max="30000" step="50" value="3500">
-      <!-- Conversions -->
-      <div class="income-conversions" id="conv-chips"></div>
-    </div>
-
-    <!-- Presets -->
-    <div>
-      <div class="section-label">Quick presets <span style="font-size:9px;opacity:.5">(monthly)</span></div>
-      <div class="preset-grid">
-        <button class="preset-btn" onclick="applyPreset(1256,this)">
-          <span class="p-name">Minimum wage</span><span class="p-val">~$1,256/mo</span>
-        </button>
-        <button class="preset-btn" onclick="applyPreset(2500,this)">
-          <span class="p-name">Below average</span><span class="p-val">~$2,500/mo</span>
-        </button>
-        <button class="preset-btn" onclick="applyPreset(3500,this)">
-          <span class="p-name">Average</span><span class="p-val">~$3,500/mo</span>
-        </button>
-        <button class="preset-btn" onclick="applyPreset(6000,this)">
-          <span class="p-name">Above average</span><span class="p-val">~$6,000/mo</span>
-        </button>
-        <button class="preset-btn" onclick="applyPreset(10000,this)">
-          <span class="p-name">High earner</span><span class="p-val">~$10,000/mo</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Status -->
-    <div>
-      <div id="status-pill" class="status-pill status-ok">
-        <span class="dot"></span>
-        <span id="status-text">—</span>
-      </div>
-    </div>
-
-    <!-- Tips -->
-    <div class="tip-block">
-      <div class="tip-title">★ Tips for your level</div>
-      <div id="tips-content"></div>
-    </div>
-
-    <button class="reset-btn" onclick="resetDefaults()">↺ Reset to recommended</button>
-  </aside>
-
-  <main class="main fade-in">
-    <div>
-      <div class="section-label">Allocation overview</div>
-      <div class="bar-wrap" id="stacked-bar" style="margin-bottom:10px"></div>
-      <div class="legend-row" id="legend-row"></div>
-    </div>
-    <div>
-      <div class="snapshot-grid" id="snapshot-grid"></div>
-    </div>
-    <div>
-      <div class="section-label">Adjust categories</div>
-      <div class="groups" id="groups"></div>
-    </div>
-  </main>
-</div>
-
-<script>
-const CATS = [
-  {key:'rent',    label:'Housing / rent',     icon:'🏠', color:'#378ADD', def:30, group:'Needs'},
-  {key:'food',    label:'Food & groceries',   icon:'🥗', color:'#1D9E75', def:12, group:'Needs'},
-  {key:'trans',   label:'Transport',          icon:'🚗', color:'#BA7517', def:10, group:'Needs'},
-  {key:'util',    label:'Utilities & bills',  icon:'⚡', color:'#D4537E', def:7,  group:'Needs'},
-  {key:'health',  label:'Health & insurance', icon:'❤️', color:'#7F77DD', def:7,  group:'Needs'},
-  {key:'ent',     label:'Entertainment',      icon:'🎬', color:'#D85A30', def:5,  group:'Wants'},
-  {key:'personal',label:'Personal & misc',    icon:'👕', color:'#888780', def:5,  group:'Wants'},
-  {key:'savings', label:'Savings',            icon:'🐷', color:'#8BBF3A', def:10, group:'Savings & investing'},
-  {key:'invest',  label:'Investing',          icon:'📈', color:'#185FA5', def:7,  group:'Savings & investing'},
-  {key:'emerg',   label:'Emergency fund',     icon:'🛡️', color:'#993556', def:7,  group:'Savings & investing'},
-];
-
-// period → multiplier to convert input value to monthly
-const PERIODS = {
-  hourly:  { label: 'hourly',  toMonth: v => v * 8 * 21.75 },  // 8h/day, ~21.75 working days
-  daily:   { label: 'daily',   toMonth: v => v * 21.75 },
-  weekly:  { label: 'weekly',  toMonth: v => v * 4.33 },
-  monthly: { label: 'monthly', toMonth: v => v },
-};
-
-const PERIOD_SLIDER_MAX = { hourly: 200, daily: 1500, weekly: 5000, monthly: 30000 };
-const PERIOD_LABELS = { hourly:'hourly income', daily:'daily income', weekly:'weekly income', monthly:'monthly income' };
-
-let pcts = {};
-let incomeMonthly = 3500; // always stored as monthly
-let currentPeriod = 'monthly';
-let rawInput = 3500; // the value as typed by user in their chosen period
-
-CATS.forEach(c => pcts[c.key] = c.def);
-
-const fmt = n => '$' + Math.round(n).toLocaleString();
-const fmtD = n => '$' + (Math.round(n * 100) / 100).toLocaleString(undefined, {minimumFractionDigits:2,maximumFractionDigits:2});
-const totalPct = () => CATS.reduce((a,c) => a + pcts[c.key], 0);
-
-function toMonthly(val, period) { return PERIODS[period].toMonth(val); }
-
-function getConversions(monthly) {
-  return {
-    hourly:  monthly / 8 / 21.75,
-    daily:   monthly / 21.75,
-    weekly:  monthly / 4.33,
-    monthly: monthly,
-    annual:  monthly * 12,
-  };
-}
-
-function getTips(inc) {
-  if (inc <= 1500) return [
-    'Prioritize housing, food, and a small emergency buffer before anything else.',
-    'Look into housing assistance, food banks, and utility relief programs in your area.',
-    'Even $20–$50/mo saved builds a powerful habit — automate it on payday.',
-    'Cooking at home and public transport are your two biggest cost levers.'
-  ];
-  if (inc <= 3500) return [
-    'Keep housing under 30%. If it\'s higher, a roommate or side income can help.',
-    'Build 1 month of expenses as an emergency fund before starting to invest.',
-    'A Roth IRA (if eligible) is a great first investment account — $500/yr to start.',
-    'Track every expense for 30 days — awareness alone will reduce spending.'
-  ];
-  if (inc <= 7000) return [
-    'Follow 50/30/20: 50% needs, 30% wants, 20% savings & investments.',
-    'Max out your employer 401k match first — it\'s a guaranteed 50–100% return.',
-    'After a 3–6 month emergency fund, shift extra to index fund investing.',
-    'Automate savings transfers on payday so you never see the money in checking.'
-  ];
-  return [
-    'At this level, lifestyle creep is the biggest risk — lock in your savings % first.',
-    'Max your 401k ($23,500/yr) and HSA ($4,150 single) for tax advantages.',
-    'After maxing tax-advantaged accounts, open a taxable brokerage for more.',
-    'A fee-only financial advisor for a one-time plan can pay for itself many times over.'
-  ];
-}
-
-function render() {
-  const tot = totalPct();
-  const rem = 100 - tot;
-  const income = incomeMonthly;
-  const conv = getConversions(income);
-
-  // Input field & slider
-  document.getElementById('income-input').value = Math.round(rawInput);
-  document.getElementById('income-sl').value = rawInput;
-  document.getElementById('income-sl').max = PERIOD_SLIDER_MAX[currentPeriod];
-  document.getElementById('input-label').textContent = 'Enter ' + PERIOD_LABELS[currentPeriod];
-
-  // Conversion chips — show the OTHER periods
-  const chipOrder = [
-    {key:'hourly',  label:'Per hour',   val: conv.hourly},
-    {key:'daily',   label:'Per day',    val: conv.daily},
-    {key:'weekly',  label:'Per week',   val: conv.weekly},
-    {key:'monthly', label:'Per month',  val: conv.monthly},
-    {key:'annual',  label:'Per year',   val: conv.annual},
-  ].filter(c => c.key !== currentPeriod);
-
-  document.getElementById('conv-chips').innerHTML = chipOrder.map(c =>
-    `<div class="conv-chip">
-      <div class="conv-chip-label">${c.label}</div>
-      <div class="conv-chip-val">${c.key === 'annual' ? fmt(c.val) : fmtD(c.val)}</div>
-    </div>`
-  ).join('');
-
-  // Stacked bar
-  document.getElementById('stacked-bar').innerHTML = CATS.map(c =>
-    `<div class="bar-seg" style="width:${pcts[c.key]}%;background:${c.color}" title="${c.label}: ${pcts[c.key]}%"></div>`
-  ).join('');
-
-  // Legend
-  document.getElementById('legend-row').innerHTML = CATS.map(c =>
-    `<span class="legend-item"><span class="legend-dot" style="background:${c.color}"></span>${c.label} ${pcts[c.key]}%</span>`
-  ).join('');
-
-  // Status pill
-  const pill = document.getElementById('status-pill');
-  const stxt = document.getElementById('status-text');
-  if (rem > 0) {
-    pill.className = 'status-pill status-ok';
-    stxt.textContent = rem + '% unallocated — ' + fmt(income * rem / 100) + '/mo free';
-  } else if (rem === 0) {
-    pill.className = 'status-pill status-ok';
-    stxt.textContent = '100% allocated — perfectly balanced';
-  } else {
-    pill.className = 'status-pill status-over';
-    stxt.textContent = 'Over budget by ' + Math.abs(rem) + '% — reduce some categories';
-  }
-
-  // Snapshot cards
-  const needs = ['rent','food','trans','util','health'].reduce((a,k) => a + pcts[k], 0);
-  const wants = ['ent','personal'].reduce((a,k) => a + pcts[k], 0);
-  const saves = ['savings','invest','emerg'].reduce((a,k) => a + pcts[k], 0);
-  const unalloc = Math.max(0, rem);
-  document.getElementById('snapshot-grid').innerHTML = `
-    <div class="metric"><div class="metric-label">Needs</div><div class="metric-val">${fmt(income*needs/100)}</div><div class="metric-sub">${needs}% · /mo</div></div>
-    <div class="metric"><div class="metric-label">Wants</div><div class="metric-val">${fmt(income*wants/100)}</div><div class="metric-sub">${wants}% · /mo</div></div>
-    <div class="metric accent-card"><div class="metric-label">Saved &amp; invested</div><div class="metric-val">${fmt(income*saves/100)}</div><div class="metric-sub">${saves}% · /mo</div></div>
-    <div class="metric"><div class="metric-label">Total allocated</div><div class="metric-val" style="color:${rem<0?'var(--danger)':'var(--text)'}">${tot}%</div><div class="metric-sub">${fmt(income*tot/100)} /mo</div></div>
-    <div class="metric"><div class="metric-label">Unallocated</div><div class="metric-val">${fmt(income*unalloc/100)}</div><div class="metric-sub">${unalloc}% buffer</div></div>
-    <div class="metric"><div class="metric-label">Annual savings</div><div class="metric-val">${fmt(income*saves/100*12)}</div><div class="metric-sub">projected/year</div></div>
-  `;
-
-  // Tips
-  document.getElementById('tips-content').innerHTML = getTips(income).map(t =>
-    `<div class="tip-item">${t}</div>`
-  ).join('');
-
-  // Category rows
-  CATS.forEach(c => {
-    const sl = document.getElementById('sl-' + c.key);
-    const pe = document.getElementById('pct-' + c.key);
-    const ae = document.getElementById('amt-' + c.key);
-    if (sl) sl.value = pcts[c.key];
-    if (pe && document.activeElement !== pe) pe.value = pcts[c.key];
-    if (ae) ae.textContent = fmt(income * pcts[c.key] / 100) + '/mo';
-  });
-
-  // Group totals
-  ['Needs','Wants','Savings & investing'].forEach(g => {
-    const cats = CATS.filter(c => c.group === g);
-    const gtot = cats.reduce((a,c) => a + pcts[c.key], 0);
-    const el = document.getElementById('gtot-' + g.replace(/[^a-z]/gi,''));
-    if (el) el.textContent = gtot + '% · ' + fmt(income * gtot / 100);
-  });
-}
-
-function setPeriod(period, btn) {
-  currentPeriod = period;
-  document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  // Convert current monthly income to the new period's raw input
-  const conv = getConversions(incomeMonthly);
-  const map = { hourly: conv.hourly, daily: conv.daily, weekly: conv.weekly, monthly: conv.monthly };
-  rawInput = Math.round(map[period] * 100) / 100;
-  render();
-}
-
-function onIncomeInput(val) {
-  const v = parseFloat(val) || 0;
-  rawInput = v;
-  incomeMonthly = toMonthly(v, currentPeriod);
-  // deactivate presets
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  render();
-}
-
-function applyPreset(monthlyVal, btn) {
-  incomeMonthly = monthlyVal;
-  const conv = getConversions(monthlyVal);
-  const map = { hourly: conv.hourly, daily: conv.daily, weekly: conv.weekly, monthly: conv.monthly };
-  rawInput = Math.round(map[currentPeriod] * 100) / 100;
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  render();
-}
-
-document.getElementById('income-sl').addEventListener('input', e => {
-  rawInput = parseFloat(e.target.value);
-  incomeMonthly = toMonthly(rawInput, currentPeriod);
-  document.getElementById('income-input').value = rawInput;
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  render();
-});
-
-function onSlide(key, val) {
-  pcts[key] = parseInt(val);
-  render();
-}
-
-function onPctInput(key, val) {
-  const v = Math.min(100, Math.max(0, parseInt(val) || 0));
-  pcts[key] = v;
-  const sl = document.getElementById('sl-' + key);
-  if (sl) sl.value = v;
-  render();
-}
-
-function onPctBlur(key, val) {
-  const v = Math.min(100, Math.max(0, parseInt(val) || 0));
-  pcts[key] = v;
-  const pe = document.getElementById('pct-' + key);
-  if (pe) pe.value = v;
-  const sl = document.getElementById('sl-' + key);
-  if (sl) sl.value = v;
-  render();
-}
-
-function resetDefaults() {
-  CATS.forEach(c => pcts[c.key] = c.def);
-  incomeMonthly = 3500;
-  currentPeriod = 'monthly';
-  rawInput = 3500;
-  document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
-  document.querySelector('[data-period="monthly"]').classList.add('active');
-  document.getElementById('income-sl').value = 3500;
-  render();
-}
-
-function buildGroups() {
-  const groups = ['Needs','Wants','Savings & investing'];
-  let html = '';
-  groups.forEach(g => {
-    const cats = CATS.filter(c => c.group === g);
-    const gid = g.replace(/[^a-z]/gi,'');
-    html += `<div class="group-block">
-      <div class="group-header">
-        <span class="group-title">${g}</span>
-        <span class="group-total" id="gtot-${gid}"></span>
-      </div>`;
-    cats.forEach(c => {
-      html += `<div class="cat-row" id="row-${c.key}">
-        <div class="cat-top">
-          <span class="cat-icon">${c.icon}</span>
-          <span class="cat-name">${c.label}</span>
-          <div class="cat-pct-wrap">
-            <input type="number" class="cat-pct-input" id="pct-${c.key}"
-              min="0" max="100" step="1" value="${pcts[c.key]}"
-              oninput="onPctInput('${c.key}', this.value)"
-              onblur="onPctBlur('${c.key}', this.value)"
-              style="border-color: ${c.color}33">
-            <span class="cat-pct-suffix">%</span>
-          </div>
-          <span class="cat-amt" id="amt-${c.key}"></span>
+      <section>
+        <label class="section-label" id="incomeLabel" for="incomeInput">Enter monthly income</label>
+        <div class="income-input-wrap">
+          <span class="income-prefix" id="incomePrefix" aria-hidden="true">$</span>
+          <input
+            type="number"
+            class="income-input"
+            id="incomeInput"
+            min="0"
+            step="1"
+            inputmode="decimal"
+            placeholder="3500"
+          />
         </div>
-        <div class="cat-slider-row">
-          <input type="range" class="cat-sl" id="sl-${c.key}" min="0" max="60" step="1"
-            value="${pcts[c.key]}" oninput="onSlide('${c.key}',this.value)">
+
+        <input type="range" id="incomeSlider" min="0" max="30000" step="50" value="3500" aria-label="Income slider" />
+        <div class="income-conversions" id="conversionChips"></div>
+      </section>
+
+      <section>
+        <div class="section-label">Quick presets <span class="muted-small">(monthly)</span></div>
+        <div class="preset-grid" id="presetGrid"></div>
+      </section>
+
+      <section>
+        <div id="statusPill" class="status-pill status-ok" role="status">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="statusText">—</span>
         </div>
-      </div>`;
-    });
-    html += '</div>';
-  });
-  document.getElementById('groups').innerHTML = html;
-}
+      </section>
 
-// inject per-cat thumb colors
-const ts = document.createElement('style');
-ts.textContent = CATS.map(c =>
-  `#sl-${c.key}::-webkit-slider-thumb{background:${c.color};width:13px;height:13px;}` +
-  `#pct-${c.key}:focus{border-color:${c.color}88!important;}`
-).join('\n');
-document.head.appendChild(ts);
+      <section class="tip-block">
+        <div class="tip-title">★ Tips for your level</div>
+        <div id="tipsContent"></div>
+      </section>
 
-buildGroups();
-render();
-</script>
+      <button class="reset-btn" id="resetButton" type="button">↺ Reset to recommended</button>
+    </aside>
+
+    <main class="main fade-in">
+      <section>
+        <div class="section-label">Allocation overview</div>
+        <div class="bar-wrap" id="stackedBar"></div>
+        <div class="legend-row" id="legendRow"></div>
+      </section>
+
+      <section>
+        <div class="snapshot-grid" id="snapshotGrid"></div>
+      </section>
+
+      <section>
+        <div class="section-label">Adjust categories</div>
+        <div class="groups" id="groups"></div>
+      </section>
+    </main>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
